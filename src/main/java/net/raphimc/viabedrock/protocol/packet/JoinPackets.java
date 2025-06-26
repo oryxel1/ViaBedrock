@@ -317,10 +317,6 @@ public class JoinPackets {
                         }
                     }
 
-                    if (!inventoryServerAuthoritative) {
-                        ViaBedrock.getPlatform().getLogger().log(Level.INFO, "This server uses client authoritative inventories. This is not supported yet.");
-                    }
-
                     gameSession.setBedrockVanillaVersion(version);
                     gameSession.setFlatGenerator(generatorType == GeneratorType.Flat);
                     gameSession.setMovementRewindHistorySize(rewindHistorySize);

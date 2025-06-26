@@ -71,10 +71,7 @@ import net.raphimc.viabedrock.protocol.model.BedrockItem;
 import net.raphimc.viabedrock.protocol.model.FullContainerName;
 import net.raphimc.viabedrock.protocol.rewriter.BlockStateRewriter;
 import net.raphimc.viabedrock.protocol.rewriter.ItemRewriter;
-import net.raphimc.viabedrock.protocol.storage.ChunkTracker;
-import net.raphimc.viabedrock.protocol.storage.EntityTracker;
-import net.raphimc.viabedrock.protocol.storage.InventoryTracker;
-import net.raphimc.viabedrock.protocol.storage.ResourcePacksStorage;
+import net.raphimc.viabedrock.protocol.storage.*;
 import net.raphimc.viabedrock.protocol.types.BedrockTypes;
 
 import java.util.ArrayList;
@@ -360,7 +357,6 @@ public class InventoryPackets {
                 inventoryTracker.removeDynamicContainer(containerName);
             }
         });
-
         protocol.registerServerbound(ServerboundPackets1_21_6.CONTAINER_CLICK, null, wrapper -> {
             wrapper.cancel();
             final int containerId = wrapper.read(Types.VAR_INT); // container id
@@ -371,7 +367,6 @@ public class InventoryPackets {
 
             final InventoryTracker inventoryTracker = wrapper.user().get(InventoryTracker.class);
             if (inventoryTracker.getPendingCloseContainer() != null) {
-                wrapper.cancel();
                 return;
             }
             final Container container = inventoryTracker.getContainerServerbound((byte) containerId);
@@ -385,8 +380,12 @@ public class InventoryPackets {
                     PacketFactory.sendJavaContainerSetContent(wrapper.user(), inventoryTracker.getInventoryContainer());
                 }
 
-                wrapper.cancel();
-                return;
+                // If the inventory is server authoritative then we will have to wait till server open an inventory.
+                if (containerId != ContainerID.CONTAINER_ID_INVENTORY.getValue() || wrapper.user().get(GameSessionStorage.class).isInventoryServerAuthoritative()) {
+                    return;
+                } else {
+                    inventoryTracker.setCurrentContainer(inventoryTracker.getInventoryContainer());
+                }
             }
             if (!container.handleClick(revision, slot, button, action)) {
                 if (container.type() != ContainerType.INVENTORY) {
@@ -402,7 +401,6 @@ public class InventoryPackets {
 
             final InventoryTracker inventoryTracker = wrapper.user().get(InventoryTracker.class);
             if (inventoryTracker.getPendingCloseContainer() != null) {
-                wrapper.cancel();
                 return;
             }
             PacketFactory.sendJavaContainerSetContent(wrapper.user(), inventoryTracker.getInventoryContainer());
