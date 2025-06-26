@@ -380,7 +380,7 @@ public class InventoryPackets {
                     PacketFactory.sendJavaContainerSetContent(wrapper.user(), inventoryTracker.getInventoryContainer());
                 }
 
-                // If the inventory is server authoritative then we will have to wait till server open an inventory.
+                // If the inventory is server authoritative then we will have to wait for the server to approve our request.
                 if (containerId != ContainerID.CONTAINER_ID_INVENTORY.getValue() || wrapper.user().get(GameSessionStorage.class).isInventoryServerAuthoritative()) {
                     return;
                 } else {

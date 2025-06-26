@@ -21,6 +21,7 @@ import com.viaversion.viaversion.api.minecraft.BlockPosition;
 import com.viaversion.viaversion.api.protocol.packet.PacketWrapper;
 import com.viaversion.viaversion.api.protocol.remapper.PacketHandler;
 import com.viaversion.viaversion.api.protocol.remapper.PacketHandlers;
+import com.viaversion.viaversion.api.type.Type;
 import com.viaversion.viaversion.api.type.Types;
 import com.viaversion.viaversion.protocols.v1_21_5to1_21_6.packet.ClientboundPackets1_21_6;
 import com.viaversion.viaversion.protocols.v1_21_5to1_21_6.packet.ServerboundPackets1_21_6;
@@ -40,13 +41,14 @@ import net.raphimc.viabedrock.protocol.data.ProtocolConstants;
 import net.raphimc.viabedrock.protocol.data.enums.Direction;
 import net.raphimc.viabedrock.protocol.data.enums.bedrock.*;
 import net.raphimc.viabedrock.protocol.data.enums.java.*;
-import net.raphimc.viabedrock.protocol.model.Position2f;
-import net.raphimc.viabedrock.protocol.model.Position3f;
+import net.raphimc.viabedrock.protocol.model.*;
 import net.raphimc.viabedrock.protocol.rewriter.GameTypeRewriter;
 import net.raphimc.viabedrock.protocol.rewriter.ItemRewriter;
 import net.raphimc.viabedrock.protocol.storage.*;
 import net.raphimc.viabedrock.protocol.types.BedrockTypes;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -279,6 +281,7 @@ public class ClientPlayerPackets {
             final GameSessionStorage gameSession = wrapper.user().get(GameSessionStorage.class);
             final ClientPlayerEntity clientPlayer = wrapper.user().get(EntityTracker.class).getClientPlayer();
             final ChunkTracker chunkTracker = wrapper.user().get(ChunkTracker.class);
+            final InventoryTracker inventoryTracker = wrapper.user().get(InventoryTracker.class);
             final PlayerActionAction action = PlayerActionAction.values()[wrapper.read(Types.VAR_INT)]; // action
             final BlockPosition position = wrapper.read(Types.BLOCK_POSITION1_14); // block position
             final Direction direction = Direction.values()[wrapper.read(Types.UNSIGNED_BYTE)]; // face
@@ -329,8 +332,41 @@ public class ClientPlayerPackets {
                     PacketFactory.sendJavaBlockUpdate(wrapper.user(), position, 0);
                 }
                 case DROP_ALL_ITEMS, DROP_ITEM -> {
-                    // TODO: Implement DROP_ALL_ITEMS, DROP_ITEM
-                    PacketFactory.sendJavaContainerSetContent(wrapper.user(), wrapper.user().get(InventoryTracker.class).getInventoryContainer());
+                    wrapper.setPacketType(ServerboundBedrockPackets.INVENTORY_TRANSACTION);
+                    wrapper.setCancelled(false);
+
+                    wrapper.write(BedrockTypes.VAR_INT, 0); // legacy request id
+                    wrapper.write(BedrockTypes.UNSIGNED_VAR_INT, ComplexInventoryTransaction_Type.NormalTransaction.getValue()); // transaction type
+
+                    int slot = inventoryTracker.getInventoryContainer().getSelectedHotbarSlot();
+                    BedrockItem thrownItem = inventoryTracker.getInventoryContainer().getSelectedHotbarItem();
+
+                    int throwAmount = action == PlayerActionAction.DROP_ITEM ? 1 : thrownItem.amount();
+                    BedrockItem inventoryThrownItem = thrownItem.copy();
+                    if (thrownItem.amount() - throwAmount <= 0) {
+                        inventoryThrownItem = BedrockItem.empty();
+                    } else {
+                        inventoryThrownItem.setAmount(thrownItem.amount() - throwAmount);
+                    }
+
+                    inventoryTracker.getInventoryContainer().setItem(slot, inventoryThrownItem);
+
+                    BedrockItem worldThrownItem = thrownItem.copy();
+                    worldThrownItem.setAmount(throwAmount);
+
+                    final List<InventoryAction> actions = new ArrayList<>();
+                    actions.add(new InventoryAction(new InventorySource(InventorySourceType.WorldInteraction, ContainerID.CONTAINER_ID_NONE.getValue(), InventorySource_InventorySourceFlags.NoFlag), 0, BedrockItem.empty(), worldThrownItem));
+                    actions.add(new InventoryAction(new InventorySource(InventorySourceType.ContainerInventory, ContainerID.CONTAINER_ID_INVENTORY.getValue(), InventorySource_InventorySourceFlags.NoFlag), slot, thrownItem, inventoryThrownItem));
+
+                    Type<BedrockItem> bedrockItemType = wrapper.user().get(ItemRewriter.class).itemType();
+
+                    wrapper.write(BedrockTypes.UNSIGNED_VAR_INT, actions.size()); // actions count
+                    for (InventoryAction inventoryAction : actions) {
+                        wrapper.write(BedrockTypes.INVENTORY_SOURCE, inventoryAction.source()); // inventory source
+                        wrapper.write(BedrockTypes.UNSIGNED_VAR_INT, inventoryAction.slot()); // slot
+                        wrapper.write(bedrockItemType, inventoryAction.from());
+                        wrapper.write(bedrockItemType, inventoryAction.to());
+                    }
                 }
                 case RELEASE_USE_ITEM -> {
                     // TODO: Implement RELEASE_USE_ITEM
