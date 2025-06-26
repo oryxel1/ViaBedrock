@@ -28,11 +28,11 @@ import net.raphimc.viabedrock.api.model.container.player.ArmorContainer;
 import net.raphimc.viabedrock.api.model.container.player.HudContainer;
 import net.raphimc.viabedrock.api.model.container.player.InventoryContainer;
 import net.raphimc.viabedrock.api.model.container.player.OffhandContainer;
+import net.raphimc.viabedrock.api.model.entity.ClientPlayerEntity;
+import net.raphimc.viabedrock.api.model.entity.Entity;
 import net.raphimc.viabedrock.api.util.PacketFactory;
 import net.raphimc.viabedrock.protocol.BedrockProtocol;
-import net.raphimc.viabedrock.protocol.data.enums.bedrock.ContainerEnumName;
-import net.raphimc.viabedrock.protocol.data.enums.bedrock.ContainerID;
-import net.raphimc.viabedrock.protocol.data.enums.bedrock.ContainerType;
+import net.raphimc.viabedrock.protocol.data.enums.bedrock.*;
 import net.raphimc.viabedrock.protocol.model.BedrockItem;
 import net.raphimc.viabedrock.protocol.model.FullContainerName;
 import net.raphimc.viabedrock.protocol.model.Position3f;
@@ -120,9 +120,35 @@ public class InventoryTracker extends StoredObject {
     }
 
     public void tick() {
-        if (this.currentContainer != null && this.currentContainer.position() != null) {
-            if (this.currentContainer.type() == ContainerType.INVENTORY) return;
+        if (this.currentContainer == null) {
+            return;
+        }
 
+        final EntityTracker entityTracker = this.user().get(EntityTracker.class);
+        final ClientPlayerEntity clientPlayer = entityTracker.getClientPlayer();
+
+        if (clientPlayer.entityFlags().contains(ActorFlags.SLEEPING)) {
+            ViaBedrock.getPlatform().getLogger().log(Level.INFO, "Closing " + this.currentContainer.type() + " because player have sleeping flags.");
+            this.forceCloseContainer(this.currentContainer);
+            return;
+        }
+
+        if (this.currentContainer.type() == ContainerType.INVENTORY) return;
+        final Position3f playerPosition = clientPlayer.position();
+
+        final Entity attachedEntity = this.currentContainer.uniqueEntityId() == -1 ? null : entityTracker.getEntityByUid(this.currentContainer.uniqueEntityId());
+        if (attachedEntity != null) {
+            if (!attachedEntity.entityData().containsKey(ActorDataIDs.CONTAINER_SIZE)) {
+                ViaBedrock.getPlatform().getLogger().log(Level.INFO, "Closing " + this.currentContainer.type() + " because entity don't have container size metadata.");
+                this.forceCloseContainer(this.currentContainer);
+                return;
+            }
+
+            if (playerPosition.distanceTo(attachedEntity.position()) > 6) {
+                ViaBedrock.getPlatform().getLogger().log(Level.INFO, "Closing " + this.currentContainer.type() + " because player is too far away (" + playerPosition.distanceTo(attachedEntity.position()) + " > 6)");
+                this.forceCloseContainer(this.currentContainer);
+            }
+        } else if (this.currentContainer.position() != null) {
             final ChunkTracker chunkTracker = this.user().get(ChunkTracker.class);
             final BlockStateRewriter blockStateRewriter = this.user().get(BlockStateRewriter.class);
             final int blockState = chunkTracker.getBlockState(this.currentContainer.position());
@@ -133,9 +159,7 @@ public class InventoryTracker extends StoredObject {
                 return;
             }
 
-            final EntityTracker entityTracker = this.user().get(EntityTracker.class);
             final Position3f containerPosition = new Position3f(this.currentContainer.position().x() + 0.5F, this.currentContainer.position().y() + 0.5F, this.currentContainer.position().z() + 0.5F);
-            final Position3f playerPosition = entityTracker.getClientPlayer().position();
             if (playerPosition.distanceTo(containerPosition) > 6) {
                 ViaBedrock.getPlatform().getLogger().log(Level.INFO, "Closing " + this.currentContainer.type() + " because player is too far away (" + playerPosition.distanceTo(containerPosition) + " > 6)");
                 this.forceCloseContainer(this.currentContainer);

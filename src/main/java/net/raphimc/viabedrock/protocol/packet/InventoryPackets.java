@@ -59,15 +59,13 @@ import net.raphimc.viabedrock.api.chunk.BedrockBlockEntity;
 import net.raphimc.viabedrock.api.model.container.ChestContainer;
 import net.raphimc.viabedrock.api.model.container.Container;
 import net.raphimc.viabedrock.api.model.container.player.InventoryContainer;
+import net.raphimc.viabedrock.api.model.entity.Entity;
 import net.raphimc.viabedrock.api.util.PacketFactory;
 import net.raphimc.viabedrock.api.util.TextUtil;
 import net.raphimc.viabedrock.protocol.BedrockProtocol;
 import net.raphimc.viabedrock.protocol.ClientboundBedrockPackets;
 import net.raphimc.viabedrock.protocol.ServerboundBedrockPackets;
-import net.raphimc.viabedrock.protocol.data.enums.bedrock.ContainerID;
-import net.raphimc.viabedrock.protocol.data.enums.bedrock.ContainerType;
-import net.raphimc.viabedrock.protocol.data.enums.bedrock.InteractPacket_Action;
-import net.raphimc.viabedrock.protocol.data.enums.bedrock.ModalFormCancelReason;
+import net.raphimc.viabedrock.protocol.data.enums.bedrock.*;
 import net.raphimc.viabedrock.protocol.data.enums.java.ClickType;
 import net.raphimc.viabedrock.protocol.model.BedrockItem;
 import net.raphimc.viabedrock.protocol.model.FullContainerName;
@@ -93,7 +91,8 @@ public class InventoryPackets {
             final ChunkTracker chunkTracker = wrapper.user().get(ChunkTracker.class);
             final BlockStateRewriter blockStateRewriter = wrapper.user().get(BlockStateRewriter.class);
             final InventoryTracker inventoryTracker = wrapper.user().get(InventoryTracker.class);
-            final byte containerId = wrapper.read(Types.BYTE); // container id
+            final EntityTracker entityTracker = wrapper.user().get(EntityTracker.class);
+            byte containerId = wrapper.read(Types.BYTE); // container id
             final byte rawType = wrapper.read(Types.BYTE); // type
             final ContainerType type = ContainerType.getByValue(rawType);
             if (type == null) {
@@ -102,7 +101,7 @@ public class InventoryPackets {
                 return;
             }
             final BlockPosition position = wrapper.read(BedrockTypes.BLOCK_POSITION); // position
-            wrapper.read(BedrockTypes.VAR_LONG); // unique entity id
+            long uniqueEntityId = wrapper.read(BedrockTypes.VAR_LONG); // unique entity id
 
             if (inventoryTracker.isAnyScreenOpen()) {
                 ViaBedrock.getPlatform().getLogger().log(Level.WARNING, "Server tried to open container while another container is open");
@@ -116,14 +115,22 @@ public class InventoryPackets {
                 title = TextUtil.stringToTextComponent(wrapper.user().get(ResourcePacksStorage.class).getTexts().translate(customNameTag.getValue()));
             }
 
+            final Entity attachedEntity = uniqueEntityId == -1 ? null : entityTracker.getEntityByUid(uniqueEntityId);
+            if (attachedEntity != null && attachedEntity.entityData().containsKey(ActorDataIDs.NAME)) {
+                title = TextUtil.stringToTextComponent(wrapper.user().get(ResourcePacksStorage.class).getTexts().translate(attachedEntity.entityData().get(ActorDataIDs.NAME).value()));
+            }
+
             final Container container;
             switch (type) {
                 case INVENTORY -> {
+                    // Bedrock will always use the default id regardless of what the server send them.
+                    containerId = (byte) ContainerID.CONTAINER_ID_INVENTORY.getValue();
+
                     inventoryTracker.setCurrentContainer(new InventoryContainer(wrapper.user(), containerId, position, inventoryTracker.getInventoryContainer()));
                     wrapper.cancel();
                     return;
                 }
-                case CONTAINER -> container = new ChestContainer(wrapper.user(), containerId, title, position, 27);
+                case CONTAINER -> container = new ChestContainer(wrapper.user(), containerId, uniqueEntityId, title, position, 27);
                 case NONE, CAULDRON, JUKEBOX, ARMOR, HAND, HUD, DECORATED_POT -> { // Bedrock client can't open these containers
                     wrapper.cancel();
                     return;

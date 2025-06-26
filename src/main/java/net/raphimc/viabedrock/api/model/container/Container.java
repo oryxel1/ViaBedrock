@@ -35,15 +35,28 @@ public abstract class Container {
 
     protected final UserConnection user;
     protected final byte containerId;
+    protected final long uniqueEntityId;
     protected final ContainerType type;
     protected final TextComponent title;
     protected final BlockPosition position;
     protected final BedrockItem[] items;
     protected final Set<String> validBlockTags;
 
+    public Container(final UserConnection user, final byte containerId, long uniqueEntityId, final ContainerType type, final TextComponent title, final BlockPosition position, final int size, final String... validBlockTags) {
+        this.user = user;
+        this.containerId = containerId;
+        this.uniqueEntityId = uniqueEntityId;
+        this.type = type;
+        this.title = title;
+        this.position = position;
+        this.items = BedrockItem.emptyArray(size);
+        this.validBlockTags = Set.of(validBlockTags);
+    }
+
     public Container(final UserConnection user, final byte containerId, final ContainerType type, final TextComponent title, final BlockPosition position, final int size, final String... validBlockTags) {
         this.user = user;
         this.containerId = containerId;
+        this.uniqueEntityId = -1;
         this.type = type;
         this.title = title;
         this.position = position;
@@ -54,6 +67,7 @@ public abstract class Container {
     protected Container(final UserConnection user, final byte containerId, final ContainerType type, final TextComponent title, final BlockPosition position, final BedrockItem[] items, final Set<String> validBlockTags) {
         this.user = user;
         this.containerId = containerId;
+        this.uniqueEntityId = -1;
         this.type = type;
         this.title = title;
         this.position = position;
@@ -125,6 +139,10 @@ public abstract class Container {
 
     public byte containerId() {
         return this.containerId;
+    }
+
+    public long uniqueEntityId() {
+        return uniqueEntityId;
     }
 
     public ContainerType type() {
