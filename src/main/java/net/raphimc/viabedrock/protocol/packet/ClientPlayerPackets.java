@@ -338,10 +338,17 @@ public class ClientPlayerPackets {
                     wrapper.write(BedrockTypes.VAR_INT, 0); // legacy request id
                     wrapper.write(BedrockTypes.UNSIGNED_VAR_INT, ComplexInventoryTransaction_Type.NormalTransaction.getValue()); // transaction type
 
+                    final List<InventoryAction> actions = new ArrayList<>();
+
                     int slot = inventoryTracker.getInventoryContainer().getSelectedHotbarSlot();
                     BedrockItem thrownItem = inventoryTracker.getInventoryContainer().getSelectedHotbarItem();
-
                     int throwAmount = action == PlayerActionAction.DROP_ITEM ? 1 : thrownItem.amount();
+
+                    BedrockItem worldThrownItem = thrownItem.copy();
+                    worldThrownItem.setAmount(throwAmount);
+
+                    actions.add(new InventoryAction(new InventorySource(InventorySourceType.WorldInteraction, ContainerID.CONTAINER_ID_NONE.getValue(), InventorySource_InventorySourceFlags.NoFlag), 0, BedrockItem.empty(), worldThrownItem));
+
                     BedrockItem inventoryThrownItem = thrownItem.copy();
                     if (thrownItem.amount() - throwAmount <= 0) {
                         inventoryThrownItem = BedrockItem.empty();
@@ -350,12 +357,6 @@ public class ClientPlayerPackets {
                     }
 
                     inventoryTracker.getInventoryContainer().setItem(slot, inventoryThrownItem);
-
-                    BedrockItem worldThrownItem = thrownItem.copy();
-                    worldThrownItem.setAmount(throwAmount);
-
-                    final List<InventoryAction> actions = new ArrayList<>();
-                    actions.add(new InventoryAction(new InventorySource(InventorySourceType.WorldInteraction, ContainerID.CONTAINER_ID_NONE.getValue(), InventorySource_InventorySourceFlags.NoFlag), 0, BedrockItem.empty(), worldThrownItem));
                     actions.add(new InventoryAction(new InventorySource(InventorySourceType.ContainerInventory, ContainerID.CONTAINER_ID_INVENTORY.getValue(), InventorySource_InventorySourceFlags.NoFlag), slot, thrownItem, inventoryThrownItem));
 
                     Type<BedrockItem> bedrockItemType = wrapper.user().get(ItemRewriter.class).itemType();
