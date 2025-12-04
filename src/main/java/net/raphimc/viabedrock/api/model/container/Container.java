@@ -29,6 +29,7 @@ import net.raphimc.viabedrock.protocol.rewriter.ItemRewriter;
 import net.raphimc.viabedrock.protocol.storage.InventoryTracker;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -66,18 +67,87 @@ public abstract class Container {
         final InventoryTracker inventoryTracker = user.get(InventoryTracker.class);
         final BedrockItem carriedItem = inventoryTracker.getHudContainer().getItem(0);
 
-        if (action == ClickType.THROW && carriedItem.isEmpty() && slot >= 0) {
+        final int bedrockSlot = bedrockSlot(slot);
+        BedrockItem item = this.getItem(bedrockSlot);
+
+        if ((action == ClickType.QUICK_MOVE || action == ClickType.PICKUP) && (button == 0 || button == 1) && slot == -999) {
+            if (carriedItem.isEmpty()) {
+                ViaBedrock.getPlatform().getLogger().log(Level.WARNING, "Tried to throw carried item through but carried item is empty!");
+                return true;
+            }
+
+            if (button == 0) {
+                this.setItem(0, BedrockItem.empty());
+            } else {
+                carriedItem.split(1);
+            }
+        } else if (action == ClickType.THROW && carriedItem.isEmpty() && slot >= 0) {
             // Simplified version of throw, can be implement better.
-            final BedrockItem item = this.getItem(slot);
             int amount = button == 0 ? 1 : item.amount();
             if (amount >= item.amount()) {
-                this.setItem(slot, BedrockItem.empty());
+                this.setItem(bedrockSlot, BedrockItem.empty());
             } else {
                 item.shrink(amount);
+            }
+        } else if (action == ClickType.PICKUP && (button == 0 || button == 1)) {
+            if (slot < 0) {
+                ViaBedrock.getPlatform().getLogger().log(Level.WARNING, "Tried to handle " + action + " action, but slot was out of bounds (" + slot + ")");
+                return true;
+            }
+
+            // TODO: Implement this.
+//            if (!this.tryItemClickBehaviourOverride(var4, var19, itemSlot, item, carried)) {
+//            }
+//
+            if (item.isEmpty()) {
+                if (!carriedItem.isEmpty()) {
+                    inventoryTracker.getHudContainer().setItem(0, safeInsert(carriedItem, bedrockSlot, button == 0 ? carriedItem.amount() : 1));
+                }
+            } else if (mayPickup(bedrockSlot)) {
+                if (carriedItem.isEmpty()) {
+                    int amount = button == 0 ? item.amount() : (item.amount() + 1) / 2;
+                    Optional<BedrockItem> optional = tryRemove(amount, 2147483647, bedrockSlot);
+                    optional.ifPresent((newItem) -> inventoryTracker.getHudContainer().setItem(0, newItem));
+                } else if (mayPlace(carriedItem, bedrockSlot)) {
+                    if (BedrockItem.isSameItemSameComponents(item, carriedItem)) {
+                        inventoryTracker.getHudContainer().setItem(0, safeInsert(carriedItem, bedrockSlot, button == 0 ? carriedItem.amount() : 1));
+                    } else if (carriedItem.amount() <= getMaxStackSize(carriedItem, bedrockSlot)) {
+                        inventoryTracker.getHudContainer().setItem(0, item);
+                        this.setItem(bedrockSlot, carriedItem);
+                    }
+                } else if (BedrockItem.isSameItemSameComponents(item, carriedItem)) {
+                    Optional<BedrockItem> optional = tryRemove(item.amount(), /*carried.getMaxStackSize()*/ 1 - carriedItem.amount(), slot);
+                    optional.ifPresent((newItem) -> carriedItem.grow(newItem.amount()));
+                }
             }
         }
 
         return true;
+    }
+
+    public Optional<BedrockItem> tryRemove(int amount, int maxAmount, int slot) {
+        final BedrockItem item = this.getItem(slot);
+        if (!this.mayPickup(slot)) {
+            return Optional.empty();
+        } else if (!this.mayPickup(slot) && !this.mayPlace(item, slot) && maxAmount < item.amount()) {
+            return Optional.empty();
+        } else {
+            amount = Math.min(amount, maxAmount);
+            BedrockItem var4 = this.removeItem(slot, amount);
+            if (var4.isEmpty()) {
+                return Optional.empty();
+            } else {
+                if (this.getItem(slot).isEmpty()) {
+                    this.setItem(slot, BedrockItem.empty());
+                }
+
+                return Optional.of(var4);
+            }
+        }
+    }
+
+    private BedrockItem removeItem(int slot, int amount) {
+        return slot >= 0 && slot < this.size() && !this.getItem(slot).isEmpty() && amount > 0 ? this.getItem(slot).split(amount) : BedrockItem.empty();
     }
 
     public BedrockItem safeInsert(BedrockItem insert, int slot, int count) {

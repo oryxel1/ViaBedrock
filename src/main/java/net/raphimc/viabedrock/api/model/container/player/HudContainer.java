@@ -18,39 +18,14 @@
 package net.raphimc.viabedrock.api.model.container.player;
 
 import com.viaversion.viaversion.api.connection.UserConnection;
-import net.raphimc.viabedrock.ViaBedrock;
 import net.raphimc.viabedrock.protocol.data.enums.bedrock.generated.ContainerID;
 import net.raphimc.viabedrock.protocol.data.enums.bedrock.generated.ContainerType;
-import net.raphimc.viabedrock.protocol.data.enums.java.ClickType;
 import net.raphimc.viabedrock.protocol.model.BedrockItem;
-
-import java.util.logging.Level;
 
 public class HudContainer extends InventoryRedirectContainer {
 
     public HudContainer(final UserConnection user) {
         super(user, (byte) ContainerID.CONTAINER_ID_PLAYER_ONLY_UI.getValue(), ContainerType.HUD, 54);
-    }
-
-    @Override
-    public boolean handleClick(int revision, short slot, byte button, ClickType action) {
-        if (action != ClickType.QUICK_MOVE && action != ClickType.PICKUP || slot != -999 || button != 0 && button != 1) {
-            return super.handleClick(revision, slot, button, action);
-        }
-
-        final BedrockItem carried = this.getItem(0);
-        if (carried.isEmpty()) {
-            ViaBedrock.getPlatform().getLogger().log(Level.WARNING, "Tried to throw carried item through but carried item is empty!");
-            return true;
-        }
-
-        if (button == 0) {
-            this.setItem(0, BedrockItem.empty());
-        } else {
-            carried.split(1);
-        }
-
-        return true;
     }
 
     @Override

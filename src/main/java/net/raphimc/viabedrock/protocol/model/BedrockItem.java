@@ -195,9 +195,9 @@ public class BedrockItem implements Item {
         return new BedrockItem(this.id, this.data, this.amount, this.tag != null ? this.tag.copy() : null, this.canPlace.clone(), this.canBreak.clone(), this.blockingTicks, this.blockRuntimeId, this.netId);
     }
 
-    public BedrockItem copyWithAmount(int count) {
+    public BedrockItem copyWithAmount(int amount) {
         final BedrockItem item = copy();
-        item.amount = (byte) count;
+        item.amount = (byte) amount;
         return item;
     }
 
