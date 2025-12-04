@@ -83,12 +83,7 @@ public abstract class Container {
             }
         } else if (action == ClickType.THROW && carriedItem.isEmpty() && slot >= 0) {
             // Simplified version of throw, can be implement better.
-            int amount = button == 0 ? 1 : item.amount();
-            if (amount >= item.amount()) {
-                this.setItem(bedrockSlot, BedrockItem.empty());
-            } else {
-                item.shrink(amount);
-            }
+            tryRemove(button == 0 ? 1 : item.amount(), Integer.MAX_VALUE, bedrockSlot);
         } else if (action == ClickType.PICKUP && (button == 0 || button == 1)) {
             if (slot < 0) {
                 ViaBedrock.getPlatform().getLogger().log(Level.WARNING, "Tried to handle " + action + " action, but slot was out of bounds (" + slot + ")");
@@ -106,7 +101,7 @@ public abstract class Container {
             } else if (mayPickup(bedrockSlot)) {
                 if (carriedItem.isEmpty()) {
                     int amount = button == 0 ? item.amount() : (item.amount() + 1) / 2;
-                    Optional<BedrockItem> optional = tryRemove(amount, 2147483647, bedrockSlot);
+                    Optional<BedrockItem> optional = tryRemove(amount, Integer.MAX_VALUE, bedrockSlot);
                     optional.ifPresent((newItem) -> inventoryTracker.getHudContainer().setItem(0, newItem));
                 } else if (mayPlace(carriedItem, bedrockSlot)) {
                     if (BedrockItem.isSameItemSameComponents(item, carriedItem)) {
@@ -116,7 +111,7 @@ public abstract class Container {
                         this.setItem(bedrockSlot, carriedItem);
                     }
                 } else if (BedrockItem.isSameItemSameComponents(item, carriedItem)) {
-                    Optional<BedrockItem> optional = tryRemove(item.amount(), /*carried.getMaxStackSize()*/ 1 - carriedItem.amount(), slot);
+                    Optional<BedrockItem> optional = tryRemove(item.amount(), /*carried.getMaxStackSize()*/ 1 - carriedItem.amount(), bedrockSlot);
                     optional.ifPresent((newItem) -> carriedItem.grow(newItem.amount()));
                 }
             }
