@@ -24,6 +24,7 @@ import com.viaversion.viaversion.api.minecraft.item.StructuredItem;
 import com.viaversion.viaversion.api.protocol.packet.PacketWrapper;
 import com.viaversion.viaversion.api.type.Types;
 import com.viaversion.viaversion.protocols.v1_21_7to1_21_9.packet.ClientboundPackets1_21_9;
+import net.raphimc.viabedrock.ViaBedrock;
 import net.raphimc.viabedrock.api.model.container.Container;
 import net.raphimc.viabedrock.protocol.BedrockProtocol;
 import net.raphimc.viabedrock.protocol.ServerboundBedrockPackets;
@@ -36,6 +37,8 @@ import net.raphimc.viabedrock.protocol.rewriter.ItemRewriter;
 import net.raphimc.viabedrock.protocol.storage.EntityTracker;
 import net.raphimc.viabedrock.protocol.storage.InventoryTracker;
 import net.raphimc.viabedrock.protocol.types.BedrockTypes;
+
+import java.util.logging.Level;
 
 public class InventoryContainer extends Container {
 
@@ -91,7 +94,7 @@ public class InventoryContainer extends Container {
     @Override
     public int bedrockSlot(int slot) {
         int bedrockSlot = slot - 36;
-        if (slot >= 0 && slot < 9) {
+        if (bedrockSlot >= 0 && bedrockSlot < 9) {
             return bedrockSlot;
         } else {
             return super.bedrockSlot(slot);

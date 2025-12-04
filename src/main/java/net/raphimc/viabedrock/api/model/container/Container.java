@@ -68,8 +68,8 @@ public abstract class Container {
         final BedrockItem carriedItem = inventoryTracker.getHudContainer().getItem(0);
 
         final int bedrockSlot = bedrockSlot(slot);
-        BedrockItem item = this.getItem(bedrockSlot);
 
+        ViaBedrock.getPlatform().getLogger().log(Level.WARNING, slot + "," + bedrockSlot);
         if ((action == ClickType.QUICK_MOVE || action == ClickType.PICKUP) && (button == 0 || button == 1) && slot == -999) {
             if (carriedItem.isEmpty()) {
                 ViaBedrock.getPlatform().getLogger().log(Level.WARNING, "Tried to throw carried item through but carried item is empty!");
@@ -83,13 +83,14 @@ public abstract class Container {
             }
         } else if (action == ClickType.THROW && carriedItem.isEmpty() && slot >= 0) {
             // Simplified version of throw, can be implement better.
-            tryRemove(button == 0 ? 1 : item.amount(), Integer.MAX_VALUE, bedrockSlot);
+            tryRemove(button == 0 ? 1 : this.getItem(bedrockSlot).amount(), Integer.MAX_VALUE, bedrockSlot);
         } else if (action == ClickType.PICKUP && (button == 0 || button == 1)) {
             if (slot < 0) {
                 ViaBedrock.getPlatform().getLogger().log(Level.WARNING, "Tried to handle " + action + " action, but slot was out of bounds (" + slot + ")");
                 return true;
             }
 
+            BedrockItem item = this.getItem(bedrockSlot);
             // TODO: Implement this.
 //            if (!this.tryItemClickBehaviourOverride(var4, var19, itemSlot, item, carried)) {
 //            }
