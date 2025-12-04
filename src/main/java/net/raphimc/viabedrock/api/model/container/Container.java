@@ -26,6 +26,7 @@ import net.raphimc.viabedrock.protocol.data.enums.bedrock.generated.ContainerTyp
 import net.raphimc.viabedrock.protocol.data.enums.java.ClickType;
 import net.raphimc.viabedrock.protocol.model.BedrockItem;
 import net.raphimc.viabedrock.protocol.rewriter.ItemRewriter;
+import net.raphimc.viabedrock.protocol.storage.InventoryTracker;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -62,6 +63,20 @@ public abstract class Container {
     }
 
     public boolean handleClick(final int revision, final short slot, final byte button, final ClickType action) {
+        final InventoryTracker inventoryTracker = user.get(InventoryTracker.class);
+        final BedrockItem carriedItem = inventoryTracker.getHudContainer().getItem(0);
+
+        if (action == ClickType.THROW && carriedItem.isEmpty() && slot >= 0) {
+            // Simplified version of throw, can be implement better.
+            final BedrockItem item = this.getItem(slot);
+            int amount = button == 0 ? 1 : item.amount();
+            if (amount >= item.amount()) {
+                this.setItem(slot, BedrockItem.empty());
+            } else {
+                item.shrink(amount);
+            }
+        }
+
         return true;
     }
 
