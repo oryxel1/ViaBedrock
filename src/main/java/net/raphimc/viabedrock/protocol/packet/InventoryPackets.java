@@ -384,7 +384,7 @@ public class InventoryPackets {
 
             container.handleClick(revision, slot, button, action);
 
-            // Send this back as a kind of validation for now, so it we know if it sync properly.
+            // Send this back as a kind of validation for now, so we know if it syncs properly.
             if (container.type() != ContainerType.INVENTORY) {
                 PacketFactory.sendJavaContainerSetContent(wrapper.user(), inventoryTracker.getInventoryContainer());
             }
