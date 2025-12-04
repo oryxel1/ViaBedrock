@@ -62,7 +62,45 @@ public abstract class Container {
     }
 
     public boolean handleClick(final int revision, final short slot, final byte button, final ClickType action) {
-        return false;
+        return true;
+    }
+
+    public BedrockItem safeInsert(BedrockItem insert, int slot, int count) {
+        if (insert.isEmpty() || !this.mayPlace(insert, slot)) {
+            return insert;
+        }
+
+        BedrockItem item = this.getItem(slot);
+        int amount = Math.min(Math.min(count, insert.amount()), this.getMaxStackSize(insert, slot) - item.amount());
+        if (amount <= 0) {
+            return insert;
+        }
+
+        if (item.isEmpty()) {
+            this.setItem(slot, insert.split(amount));
+        } else if (BedrockItem.isSameItemSameComponents(item, insert)) {
+            insert.shrink(amount);
+            item.grow(amount);
+            this.setItem(slot, item);
+        }
+
+        return insert;
+    }
+
+    public int getMaxStackSize(BedrockItem var1, int slot) {
+        return Math.min(this.getMaxStackSize(), 1 /*var1.getMaxStackSize()*/);
+    }
+
+    public int getMaxStackSize() {
+        return 99;
+    }
+
+    public boolean mayPlace(BedrockItem var1, int slot) {
+        return true;
+    }
+
+    public boolean mayPickup(int slot) {
+        return true;
     }
 
     public void clearItems() {
@@ -112,6 +150,10 @@ public abstract class Container {
     }
 
     public int javaSlot(final int slot) {
+        return slot;
+    }
+
+    public int bedrockSlot(final int slot) {
         return slot;
     }
 

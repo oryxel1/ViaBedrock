@@ -60,6 +60,13 @@ public class BedrockItem implements Item {
         this.netId = netId;
     }
 
+    public BedrockItem split(int var1) {
+        int var2 = Math.min(var1, this.amount());
+        BedrockItem item = this.copyWithAmount(var2);
+        item.shrink(var2);
+        return item;
+    }
+
     public static BedrockItem empty() {
         return new BedrockItem(0, (short) 0, (byte) 0);
     }
@@ -108,6 +115,14 @@ public class BedrockItem implements Item {
     @Override
     public void setAmount(final int amount) {
         this.amount = (byte) amount;
+    }
+
+    public void shrink(int amount) {
+        this.amount -= (byte) amount;
+    }
+
+    public void grow(int amount) {
+        this.amount += (byte) amount;
     }
 
     @Override
@@ -180,6 +195,12 @@ public class BedrockItem implements Item {
         return new BedrockItem(this.id, this.data, this.amount, this.tag != null ? this.tag.copy() : null, this.canPlace.clone(), this.canBreak.clone(), this.blockingTicks, this.blockRuntimeId, this.netId);
     }
 
+    public BedrockItem copyWithAmount(int count) {
+        final BedrockItem item = copy();
+        item.amount = (byte) count;
+        return item;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -208,4 +229,10 @@ public class BedrockItem implements Item {
                 '}';
     }
 
+    public static boolean isSameItemSameComponents(BedrockItem var0, BedrockItem var1) {
+        final BedrockItem ignoreAmountAndTicks = var1.copy();
+        var1.amount = var0.amount;
+        var1.blockingTicks = var0.blockingTicks;
+        return var0.isEmpty() && var1.isEmpty() || ignoreAmountAndTicks.equals(var0);
+    }
 }

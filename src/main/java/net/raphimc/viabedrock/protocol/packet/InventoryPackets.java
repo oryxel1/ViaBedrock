@@ -375,12 +375,20 @@ public class InventoryPackets {
                 wrapper.cancel();
                 return;
             }
-            if (!container.handleClick(revision, slot, button, action)) {
-                if (container.type() != ContainerType.INVENTORY) {
-                    PacketFactory.sendJavaContainerSetContent(wrapper.user(), inventoryTracker.getInventoryContainer());
-                }
-                PacketFactory.sendJavaContainerSetContent(wrapper.user(), container);
+//            if (!container.handleClick(revision, slot, button, action)) {
+//                if (container.type() != ContainerType.INVENTORY) {
+//                    PacketFactory.sendJavaContainerSetContent(wrapper.user(), inventoryTracker.getInventoryContainer());
+//                }
+//                PacketFactory.sendJavaContainerSetContent(wrapper.user(), container);
+//            }
+
+            container.handleClick(revision, slot, button, action);
+
+            // Send this back as a kind of validation for now, so it we know if it sync properly.
+            if (container.type() != ContainerType.INVENTORY) {
+                PacketFactory.sendJavaContainerSetContent(wrapper.user(), inventoryTracker.getInventoryContainer());
             }
+            PacketFactory.sendJavaContainerSetContent(wrapper.user(), container);
         });
         protocol.registerServerbound(ServerboundPackets1_21_6.SET_CREATIVE_MODE_SLOT, null, wrapper -> {
             wrapper.cancel();

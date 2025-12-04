@@ -89,6 +89,16 @@ public class InventoryContainer extends Container {
     }
 
     @Override
+    public int bedrockSlot(int slot) {
+        int bedrockSlot = slot - 36;
+        if (slot >= 0 && slot < 9) {
+            return bedrockSlot;
+        } else {
+            return super.bedrockSlot(slot);
+        }
+    }
+
+    @Override
     public byte javaContainerId() {
         return (byte) ContainerID.CONTAINER_ID_INVENTORY.getValue();
     }
