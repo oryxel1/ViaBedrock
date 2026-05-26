@@ -38,12 +38,12 @@ public abstract class ItemModelResourceRewriter implements ResourcePackRewriter.
         this.subFolder = subFolder;
     }
 
-    protected void putItemDefinition(final Content javaContent, final String name, final Map<String, JsonObject> modelDefinitions) {
+    protected void putItemDefinition(final Content javaContent, final String name, final Map<String, String> modelDefinitions) {
         final String itemPath = this.subFolder + '/' + StringUtil.makeIdentifierValueSafe(name);
         final JsonArray modelCases = new JsonArray();
-        for (Map.Entry<String, JsonObject> modelDefinition : modelDefinitions.entrySet()) {
+        for (Map.Entry<String, String> modelDefinition : modelDefinitions.entrySet()) {
             final String modelPath = itemPath + '/' + StringUtil.makeIdentifierValueSafe(modelDefinition.getKey());
-            javaContent.putJson("assets/viabedrock/models/" + modelPath + ".json", modelDefinition.getValue());
+            javaContent.putString("assets/viabedrock/models/" + modelPath + ".json", modelDefinition.getValue());
 
             final JsonObject model = new JsonObject();
             model.addProperty("type", "minecraft:model");

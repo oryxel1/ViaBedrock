@@ -17,8 +17,8 @@
  */
 package net.raphimc.viabedrock.protocol.rewriter.resourcepack;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.viaversion.viaversion.api.minecraft.item.data.ItemModel;
-import com.viaversion.viaversion.libs.gson.JsonObject;
 import com.viaversion.viaversion.util.Key;
 import net.raphimc.viabedrock.api.resourcepack.ResourcePack;
 import net.raphimc.viabedrock.api.resourcepack.content.Content;
@@ -45,7 +45,7 @@ public class CustomItemTextureResourceRewriter extends ItemModelResourceRewriter
     @Override
     public void apply(final ResourcePackStorage resourcePackStorage, final Content javaContent) {
         for (Map.Entry<String, List<TextureDefinitions.ItemTextureDefinition>> itemEntry : resourcePackStorage.getTextures().itemTextures().entrySet()) {
-            final Map<String, JsonObject> javaModelDefinitions = new HashMap<>();
+            final Map<String, String> javaModelDefinitions = new HashMap<>();
             for (int i = 0; i < itemEntry.getValue().size(); i++) {
                 final TextureDefinitions.ItemTextureDefinition itemTextureDefinition = itemEntry.getValue().get(i);
                 for (ResourcePack pack : resourcePackStorage.getPackStackTopToBottom()) {
@@ -55,12 +55,12 @@ public class CustomItemTextureResourceRewriter extends ItemModelResourceRewriter
                         break;
                     }
                 }
-                final JsonObject itemModel = new JsonObject();
-                itemModel.addProperty("parent", "minecraft:item/generated");
-                final JsonObject layer0 = new JsonObject();
-                layer0.addProperty("layer0", "viabedrock:" + this.getJavaTexturePath(itemTextureDefinition.texturePath()));
-                itemModel.add("textures", layer0);
-                javaModelDefinitions.put(String.valueOf(i), itemModel);
+                final JSONObject itemModel = new JSONObject();
+                itemModel.put("parent", "minecraft:item/generated");
+                final JSONObject layer0 = new JSONObject();
+                layer0.put("layer0", "viabedrock:" + this.getJavaTexturePath(itemTextureDefinition.texturePath()));
+                itemModel.put("textures", layer0);
+                javaModelDefinitions.put(String.valueOf(i), itemModel.toString());
             }
             this.putItemDefinition(javaContent, itemEntry.getKey(), javaModelDefinitions);
         }

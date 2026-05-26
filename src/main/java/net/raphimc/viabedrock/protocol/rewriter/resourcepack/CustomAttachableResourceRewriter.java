@@ -17,9 +17,9 @@
  */
 package net.raphimc.viabedrock.protocol.rewriter.resourcepack;
 
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import com.viaversion.viaversion.api.minecraft.item.data.ItemModel;
-import com.viaversion.viaversion.libs.gson.JsonArray;
-import com.viaversion.viaversion.libs.gson.JsonObject;
 import com.viaversion.viaversion.util.Key;
 import net.raphimc.viabedrock.api.resourcepack.ResourcePack;
 import net.raphimc.viabedrock.api.resourcepack.content.Content;
@@ -49,7 +49,7 @@ public class CustomAttachableResourceRewriter extends ItemModelResourceRewriter 
     public void apply(final ResourcePackStorage resourcePackStorage, final Content javaContent) {
         for (Map.Entry<String, AttachableDefinitions.AttachableDefinition> attachableEntry : resourcePackStorage.getAttachables().attachables().entrySet()) {
             final AttachableDefinitions.AttachableDefinition attachableDefinition = attachableEntry.getValue();
-            final Map<String, JsonObject> javaModelDefinitions = new HashMap<>();
+            final Map<String, String> javaModelDefinitions = new HashMap<>();
             for (String bedrockPath : attachableDefinition.attachableData().getTextures().values()) {
                 for (ResourcePack pack : resourcePackStorage.getPackStackTopToBottom()) {
                     final Content.LazyImage texture = pack.content().getShortnameImage(bedrockPath);
@@ -70,30 +70,30 @@ public class CustomAttachableResourceRewriter extends ItemModelResourceRewriter 
 
                 final String javaTexturePath = this.getJavaTexturePath(attachableDefinition.attachableData().getTextures().get(modelEntry.getKey()));
                 final JavaItemModel itemModelData = bedrockGeometry.toJavaItemModel("viabedrock:" + javaTexturePath, RotationType.POST_1_21_11);
-                final JsonObject itemModel = itemModelData.compile();
+                final JSONObject itemModel = itemModelData.compile();
 
-                final JsonObject display = new JsonObject();
-                final JsonArray scaling = new JsonArray();
+                final JSONObject display = new JSONObject();
+                final JSONArray scaling = new JSONArray();
                 scaling.add(itemModelData.getScale());
                 scaling.add(itemModelData.getScale());
                 scaling.add(itemModelData.getScale());
 
-                final JsonObject value = new JsonObject();
-                value.add("scale", scaling);
+                final JSONObject value = new JSONObject();
+                value.put("scale", scaling);
 
-                display.add("firstperson_righthand", value);
-                display.add("firstperson_lefthand", value);
-                display.add("thirdperson_righthand", value);
-                display.add("thirdperson_lefthand", value);
-                display.add("head", value);
-                display.add("gui", value);
-                display.add("ground", value);
-                display.add("fixed", value);
+                display.put("firstperson_righthand", value);
+                display.put("firstperson_lefthand", value);
+                display.put("thirdperson_righthand", value);
+                display.put("thirdperson_lefthand", value);
+                display.put("head", value);
+                display.put("gui", value);
+                display.put("ground", value);
+                display.put("fixed", value);
 
-                itemModel.add("display", display);
+                itemModel.put("display", display);
 
                 final String modelKey = attachableEntry.getKey() + "_" + modelEntry.getKey();
-                javaModelDefinitions.put(modelKey, itemModel);
+                javaModelDefinitions.put(modelKey, itemModel.toString());
                 resourcePackStorage.getConverterData().put("ca_" + attachableEntry.getKey() + '_' + modelKey, true);
             }
             this.putItemDefinition(javaContent, attachableEntry.getKey(), javaModelDefinitions);

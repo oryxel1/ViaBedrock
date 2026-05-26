@@ -48,7 +48,7 @@ public class CustomEntityResourceRewriter extends ItemModelResourceRewriter {
     public void apply(final ResourcePackStorage resourcePackStorage, final Content javaContent) {
         for (Map.Entry<String, EntityDefinitions.EntityDefinition> entityEntry : resourcePackStorage.getEntities().entities().entrySet()) {
             final EntityDefinitions.EntityDefinition entityDefinition = entityEntry.getValue();
-            final Map<String, JsonObject> javaModelDefinitions = new HashMap<>();
+            final Map<String, String> javaModelDefinitions = new HashMap<>();
             for (String bedrockPath : entityDefinition.entityData().getTextures().values()) {
                 for (ResourcePack pack : resourcePackStorage.getPackStackTopToBottom()) {
                     final Content.LazyImage texture = pack.content().getShortnameImage(bedrockPath);
@@ -64,7 +64,7 @@ public class CustomEntityResourceRewriter extends ItemModelResourceRewriter {
                     for (Map.Entry<String, String> textureEntry : entityDefinition.entityData().getTextures().entrySet()) {
                         final String modelKey = modelEntry.getKey() + "_" + textureEntry.getKey();
                         final JavaItemModel itemModelData = bedrockGeometry.toJavaItemModel("viabedrock:" + this.getJavaTexturePath(textureEntry.getValue()), RotationType.POST_1_21_11);
-                        javaModelDefinitions.put(modelKey, itemModelData.compile());
+                        javaModelDefinitions.put(modelKey, itemModelData.compile().toString());
                         resourcePackStorage.getConverterData().put("ce_" + entityEntry.getKey() + '_' + modelKey + "_scale", itemModelData.getScale());
                     }
                 }
